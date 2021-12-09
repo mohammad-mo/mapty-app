@@ -81,6 +81,10 @@ class Cycling extends Workout
  const inputDuration = document.querySelector('.form__input--duration')
  const inputCadence = document.querySelector('.form__input--cadence')
  const inputElevation = document.querySelector('.form__input--elevation')
+ const btnClear = document.querySelector(`.btn__clearAll`)
+ const btnPositive = document.querySelector(`.btn--positive`)
+ const btnNegative = document.querySelector(`.btn--negative`)
+ const alertMessage = document.querySelector(`.alert--deletion`)
 
 class App {
     // private properties(fields)
@@ -102,6 +106,20 @@ class App {
       form.addEventListener('submit', this._newWorkout.bind(this))
       inputType.addEventListener('change', this._showFormToggleElevationField)
       containerWorkouts.addEventListener('click', this._moveToPopup.bind(this))
+      
+      const btnDelete = document.querySelectorAll('.workout__delete')
+      btnDelete.forEach(btn =>
+        btn.addEventListener('click', this._deleteWorkout.bind(this))
+      )
+      
+      if (!this.#workouts.length)
+      {
+        btnClear.style.display = 'none'
+      }
+      else
+      {
+        btnClear.addEventListener('click', this._deleteAll.bind(this))
+      }
     }
   
     _getPosition() {
@@ -126,7 +144,7 @@ class App {
     
       L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          '&copy <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(this.#map)
     
       // Handling clicks on map
@@ -215,7 +233,8 @@ class App {
       }
 
       // Add new object to workout array
-      this.#workouts.unshift(workout)
+      this.#workouts.push(workout)
+      location.reload() // Reload page to save workout
       
       // Render workout on map as marker
       this._renderWorkoutMarker(workout)
@@ -277,6 +296,7 @@ class App {
               <span class="workout__value">${workout.cadence}</span>
               <span class="workout__unit">spm</span>
             </div>
+            <button class="workout__delete">Delete</button>
             `
         }
 
@@ -293,8 +313,10 @@ class App {
                 <span class="workout__value">${workout.elevationGain}</span>
                 <span class="workout__unit">m</span>
             </div>
+            <button class="workout__delete">Delete</button>
             `
         }
+        
         form.insertAdjacentHTML('afterend', html)
     }
 
@@ -341,7 +363,62 @@ class App {
             })
     }
 
-    reset()
+    // Deletes all workouts
+    _deleteAll() {
+      this._renderAlert()
+      let paragraph = alertMessage.children
+      paragraph[0].innerText = 'Are you sure you want to delete all your workouts?'
+    
+      btnPositive.addEventListener('click', () => 
+      {
+          this._reset()
+      })
+    }
+
+    // Deletes Workout
+    _deleteWorkout(e) {
+      // Select workout & it's ID
+      const target = e.target.parentNode
+      const id = target.dataset.id
+  
+      // Look through each of the workouts for matching IDs
+      const list = this.#workouts
+      // Locates workout to be deleted and fills the element variable
+      const index = list.filter(workout => workout.id !== id) 
+  
+      this._renderAlert()
+      const paragraph = alertMessage.children
+      paragraph[0].innerText = 'Are you sure you want to delete this workout?'
+  
+      btnPositive.addEventListener('click', () => 
+      {
+        this.#workouts.splice(index, 1) // Delete workout
+        this._setLocalStorage() // Save deletion
+        location.reload() // Reload page
+      })
+    }
+
+    // Render the delete workout alert
+    _renderAlert() 
+    {
+      // Add alert message and remove the clear all button
+      alertMessage.classList.add('alert--deletion--active')
+      btnClear.style.display = 'none'
+
+      // If btn-Negative, remove the alert and add back the Clear All btn.
+      btnNegative.addEventListener('click', () => 
+      {
+        alertMessage.classList.remove('alert--deletion--active')
+        btnClear.style.display = `block`
+      })
+      btnPositive.addEventListener('click', () => 
+      {
+        alertMessage.classList.remove('alert--deletion--active')
+        btnClear.style.display = 'none'
+      })
+    }
+
+    _reset()
     {
         localStorage.removeItem('workouts')
         location.reload()
