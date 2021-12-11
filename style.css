@@ -48,6 +48,11 @@ a:visited {
   border-radius: 10px 0 0 10px;
 }
 
+@media screen and (max-width: 620px) {
+  .sidebar {
+    border-radius: 10px;
+  }
+}
 .logo {
   height: 5.2rem;
   align-self: center;
